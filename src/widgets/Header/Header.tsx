@@ -1,12 +1,48 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { UserIcon, ShoppingCartIcon, Bars3Icon } from '@heroicons/react/24/outline';
 
 export const Header = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target as Node)
+      ) {
+        setIsProfileOpen(false);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsProfileOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, []);
+
+  const menuItems = [
+    { href: '/account', label: 'Manage My Account' },
+    { href: '/orders', label: 'My Orders' },
+    { href: '/cancellations', label: 'My Cancellations' },
+    { href: '/reviews', label: 'My Reviews' },
+  ];
 
   return (
     <>
@@ -26,6 +62,8 @@ export const Header = () => {
             <button
               className="md:hidden text-gray-500 hover:text-gray-700"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-expanded={isMobileMenuOpen}
+              aria-label="Toggle menu"
             >
               <Bars3Icon className="h-6 w-6" />
             </button>
@@ -66,41 +104,44 @@ export const Header = () => {
             <div className="flex items-center space-x-6">
               <div className="relative">
                 <button
+                  ref={buttonRef}
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
-                  className="text-gray-600 hover:text-gray-900 transition-colors duration-200"
+                  className="text-gray-600 hover:text-gray-900 transition-colors duration-200 p-2 rounded-full hover:bg-gray-100"
+                  aria-expanded={isProfileOpen}
+                  aria-haspopup="true"
+                  aria-label="User menu"
                 >
                   <UserIcon className="h-6 w-6" />
                 </button>
 
                 {isProfileOpen && (
-                  <div className="absolute right-0 mt-3 w-56 bg-white rounded-lg shadow-lg py-2 border border-gray-100">
-                    <Link 
-                      href="/account" 
-                      className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200"
-                    >
-                      Manage My Account
-                    </Link>
-                    <Link 
-                      href="/orders" 
-                      className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200"
-                    >
-                      My Orders
-                    </Link>
-                    <Link 
-                      href="/cancellations" 
-                      className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200"
-                    >
-                      My Cancellations
-                    </Link>
-                    <Link 
-                      href="/reviews" 
-                      className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200"
-                    >
-                      My Reviews
-                    </Link>
+                  <div
+                    ref={dropdownRef}
+                    className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg py-2 border border-gray-100 animate-fade-in"
+                    role="menu"
+                    aria-orientation="vertical"
+                    aria-labelledby="user-menu"
+                  >
+                    {menuItems.map((item, index) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:bg-gray-50"
+                        role="menuitem"
+                        tabIndex={0}
+                        onClick={() => setIsProfileOpen(false)}
+                      >
+                        {item.label}
+                      </Link>
+                    ))}
                     <div className="border-t border-gray-100 my-2"></div>
-                    <button 
-                      className="block w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-gray-50 transition-colors duration-200"
+                    <button
+                      className="block w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:bg-gray-50"
+                      role="menuitem"
+                      onClick={() => {
+                        // Здесь будет логика выхода
+                        setIsProfileOpen(false);
+                      }}
                     >
                       Logout
                     </button>
@@ -108,7 +149,10 @@ export const Header = () => {
                 )}
               </div>
 
-              <button className="text-gray-600 hover:text-gray-900 transition-colors duration-200 relative">
+              <button 
+                className="text-gray-600 hover:text-gray-900 transition-colors duration-200 relative p-2 rounded-full hover:bg-gray-100"
+                aria-label="Shopping cart"
+              >
                 <ShoppingCartIcon className="h-6 w-6" />
                 <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                   0
